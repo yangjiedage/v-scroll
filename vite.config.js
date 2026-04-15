@@ -1,36 +1,33 @@
 import { defineConfig } from 'vite';
-import fs from 'fs';
-import path from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
 
 const cssToJsPlugin = () => {
   let config;
   return {
     name: 'css-to-js-plugin',
-    configResolved(resolvedConfig) {
-      config = resolvedConfig;
+    configResolved(resolved_config) {
+      config = resolved_config;
       
-      const cssPath = path.resolve(config.root, 'src/v-scroll.css');
-      const outDir = path.resolve(config.root, 'public/theme');
+      const css_path = resolve(config.root, 'src/v-scroll.css'),
+            out_dir = resolve(config.root, 'public/theme');
       
-      if (!fs.existsSync(outDir)) {
-        fs.mkdirSync(outDir, { recursive: true });
+      if (!existsSync(out_dir)) {
+        mkdirSync(out_dir, { recursive: true });
       }
 
-      if (fs.existsSync(cssPath)) {
-        const cssContent = fs.readFileSync(cssPath, 'utf-8');
+      if (existsSync(css_path)) {
+        const css_content = readFileSync(css_path, 'utf-8'),
+              compressed_css = css_content
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\s+/g, ' ')
+                .replace(/\s*([{}:;,>+~])\s*/g, '$1')
+                .trim(),
+              js_content = `export default \`${compressed_css}\`;\n`,
+              js_path = resolve(out_dir, 'v-scroll.js');
         
-        // Remove comments and whitespace to compress
-        const compressedCss = cssContent
-          .replace(/\/\*[\s\S]*?\*\//g, '') // remove comments
-          .replace(/\s+/g, ' ') // collapse whitespace
-          .replace(/\s*([{}:;,>+~])\s*/g, '$1') // remove space around separators
-          .trim();
-        
-        const jsContent = `export default \`${compressedCss}\`;\n`;
-        const jsPath = path.resolve(outDir, 'v-scroll.js');
-        
-        fs.writeFileSync(jsPath, jsContent, 'utf-8');
-        console.log(`[css-to-js-plugin] Generated ${jsPath}`);
+        writeFileSync(js_path, js_content, 'utf-8');
+        console.log(`[css-to-js-plugin] Generated ${js_path}`);
       }
     }
   };

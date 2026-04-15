@@ -34,6 +34,7 @@ const cssToJsPlugin = () => {
 };
 
 export default defineConfig(({ command }) => ({
+  base: '/v-scroll/',
   resolve: {
     alias: command === 'serve' ? {
       '$/': '/public/theme/'

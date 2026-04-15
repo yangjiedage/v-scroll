@@ -40,11 +40,23 @@ class VScroll extends HTMLElement {
     this._resizeObserver = null;
     this._mutationObserver = null;
     
+    this._scrollTimeout = null;
+    
     this.handleScroll = this.handleScroll.bind(this);
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.handlePointerMove = this.handlePointerMove.bind(this);
     this.handlePointerUp = this.handlePointerUp.bind(this);
     this.updateScrollbar = this.updateScrollbar.bind(this);
+    this.handleTrackEnter = this.handleTrackEnter.bind(this);
+    this.handleTrackLeave = this.handleTrackLeave.bind(this);
+  }
+
+  handleTrackEnter() {
+    this.setAttribute('data-track-hover', '');
+  }
+
+  handleTrackLeave() {
+    this.removeAttribute('data-track-hover');
   }
 
   connectedCallback() {
@@ -52,6 +64,8 @@ class VScroll extends HTMLElement {
     
     this._viewport.addEventListener('scroll', this.handleScroll, { passive: true });
     this._bar.addEventListener('pointerdown', this.handlePointerDown);
+    this._track.addEventListener('pointerenter', this.handleTrackEnter);
+    this._track.addEventListener('pointerleave', this.handleTrackLeave);
     
     this._resizeObserver = new ResizeObserver(this.updateScrollbar);
     this._resizeObserver.observe(this._viewport);
@@ -75,12 +89,19 @@ class VScroll extends HTMLElement {
   disconnectedCallback() {
     this._viewport.removeEventListener('scroll', this.handleScroll);
     this._bar.removeEventListener('pointerdown', this.handlePointerDown);
+    this._track.removeEventListener('pointerenter', this.handleTrackEnter);
+    this._track.removeEventListener('pointerleave', this.handleTrackLeave);
     this._bar.removeEventListener('pointermove', this.handlePointerMove);
     this._bar.removeEventListener('pointerup', this.handlePointerUp);
     this._bar.removeEventListener('pointercancel', this.handlePointerUp);
     
     const slot = this.shadowRoot.querySelector('slot');
     slot.removeEventListener('slotchange', this._observeAssignedNodes);
+    
+    if (this._scrollTimeout) {
+      clearTimeout(this._scrollTimeout);
+      this._scrollTimeout = null;
+    }
     
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
@@ -130,6 +151,18 @@ class VScroll extends HTMLElement {
 
   handleScroll() {
     this.updateScrollbar();
+    
+    // Add scrolling attribute to show bar
+    this.setAttribute('data-scrolling', '');
+    
+    if (this._scrollTimeout) {
+      clearTimeout(this._scrollTimeout);
+    }
+    
+    // Hide bar after scrolling stops
+    this._scrollTimeout = setTimeout(() => {
+      this.removeAttribute('data-scrolling');
+    }, 1000);
   }
 
   handlePointerDown(e) {

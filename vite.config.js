@@ -37,12 +37,12 @@ export default defineConfig(({ command }) => ({
   base: './',
   resolve: {
     alias: command === 'serve' ? {
-      '$/': '/public/theme/'
+      '$/': '/theme/'
     } : {}
   },
   build: {
     rollupOptions: {
-      external: (id) => id.startsWith('$/')
+      external: (id) => id.startsWith('$/') || id.includes('/theme/')
     }
   },
   plugins: [cssToJsPlugin()],
